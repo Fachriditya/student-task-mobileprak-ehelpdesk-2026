@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../dashboard/presentation/pages/dashboard_page.dart';
-import '../../../ticket/presentation/pages/ticket_list_page.dart'; // Import ini
-import '../../../profile/presentation/pages/profile_page.dart';     // Import ini
+import '../../../dashboard/presentation/pages/admin_dashboard_page.dart';
+import '../../../ticket/presentation/pages/ticket_list_page.dart';
+import '../../../profile/presentation/pages/profile_page.dart';
+import '../../../dashboard/presentation/pages/admin_dashboard_page.dart';
+import '../../../dashboard/presentation/pages/helpdesk_dashboard_page.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -13,42 +18,73 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
 
-  // Sekarang halamannya beneran ada, bukan cuma Text lagi
-  final List<Widget> _pages = [
-    const DashboardPage(),
-    const TicketListPage(), 
-    const ProfilePage(), 
-  ];
+  // Kita buat fungsi dinamis untuk menyortir halaman berdasarkan role
+  List<Widget> _getPages(String role) {
+    // Memastikan akses admin dan superadmin terbaca semua
+    final hasAdminAccess = (role == 'admin' || role == 'isadmin' || role == 'issuperadmin');
+
+    if (hasAdminAccess) {
+      return [
+        const AdminDashboardPage(), // 0. Dashboard Admin
+        const TicketListPage(),     // 1. Ticket List (Mode Admin)
+        const ProfilePage(),        // 2. Profil
+      ];
+    } else if (role == 'helpdesk') {
+      return [
+        const Center(child: Text("Helpdesk Dashboard Soon")), // Dashboard Helpdesk
+        const TicketListPage(),     // 1. Ticket List (Mode Helpdesk)
+        const ProfilePage(),        // 2. Profil
+      ];
+    } else if (role == 'helpdesk') {
+      return [
+        const HelpdeskDashboardPage(), // <-- Ganti baris ini
+        const TicketListPage(),     
+        const ProfilePage(),        
+      ];
+    } else {
+      return [
+        const DashboardPage(),      // 0. Dashboard User
+        const TicketListPage(),     // 1. Ticket List (Mode User)
+        const ProfilePage(),        // 2. Profil
+      ];
+    }
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Ambil role yang sedang login
+    final authProvider = context.watch<AuthProvider>();
+    final role = authProvider.user?.role.toLowerCase() ?? 'pengguna';
+
+    // Panggil daftar halaman sesuai role
+    final pages = _getPages(role);
+
+    // Pengaman: Jika index saat ini melebih jumlah halaman yang ada
+    if (_selectedIndex >= pages.length) {
+      _selectedIndex = 0;
+    }
+
     return Scaffold(
-      // Pakai IndexedStack supaya state halaman nggak ilang pas pindah tab
+      // MENGGUNAKAN INDEXEDSTACK AGAR STA[cite: 12]TE TAB TIDAK HILANG SAAT PINDAH TAB
       body: IndexedStack(
         index: _selectedIndex,
-        children: _pages,
+        children: pages,
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
-        selectedItemColor: const Color(0xFF4B39EF),
-        type: BottomNavigationBarType.fixed, // Biar stabil kalau itemnya nambah
+        onTap: _onItemTapped,
+        selectedItemColor: const Color(0xFF4B39EF), // Ungu khas Figma-mu[cite: 12]
+        unselectedItemColor: Colors.grey,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined), 
-            activeIcon: Icon(Icons.dashboard),
-            label: "Dashboard"
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.confirmation_number_outlined), 
-            activeIcon: Icon(Icons.confirmation_number),
-            label: "Tickets"
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline), 
-            activeIcon: Icon(Icons.person),
-            label: "Profile"
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(icon: Icon(Icons.confirmation_number), label: "Tickets"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
     );

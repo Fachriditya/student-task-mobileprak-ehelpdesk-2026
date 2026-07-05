@@ -1,18 +1,19 @@
+// file: lib/features/auth/data/models/user_model.dart
 class UserModel {
   final String id;
-  final String username;
+  final String name; // Diubah dari username menjadi name agar cocok dengan tabel 'profiles'
   final String role;
 
   UserModel({
     required this.id,
-    required this.username,
+    required this.name,
     required this.role,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'],
-      username: json['username'],
+      name: json['name'],
       role: json['role'],
     );
   }

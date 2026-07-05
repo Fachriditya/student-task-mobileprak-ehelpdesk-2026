@@ -32,15 +32,19 @@ class TicketCard extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                Text(ticket.id, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                const SizedBox(width: 8),
+                // UUID (ticket.id) SUDAH KITA HAPUS DARI SINI
                 _buildPriorityBadge(ticket.priority),
                 const Spacer(),
                 const Icon(Icons.attach_file, size: 14, color: Colors.grey),
-                Text(" ${ticket.attachmentCount} ", style: const TextStyle(fontSize: 12)),
+                Text(" ${ticket.attachmentCount}  ", style: const TextStyle(fontSize: 12)),
                 const Icon(Icons.chat_bubble_outline, size: 14, color: Colors.grey),
-                Text(" ${ticket.commentCount} ", style: const TextStyle(fontSize: 12)),
-                Text(ticket.date, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(" ${ticket.commentCount}  ", style: const TextStyle(fontSize: 12)),
+                
+                // Kita potong tanggalnya ambil 10 karakter pertama saja (YYYY-MM-DD)
+                Text(
+                  ticket.date.length >= 10 ? ticket.date.substring(0, 10) : ticket.date, 
+                  style: const TextStyle(fontSize: 12, color: Colors.grey)
+                ),
               ],
             )
           ],
@@ -59,14 +63,28 @@ class TicketCard extends StatelessWidget {
   }
 
   Widget _buildPriorityBadge(String priority) {
+    // 1. Buat logika penentu warna berdasarkan teks prioritasnya
+    Color badgeColor;
+    if (priority.toLowerCase() == 'low') {
+      badgeColor = Colors.teal; // Sama seperti warna di pilihan Create Ticket
+    } else if (priority.toLowerCase() == 'medium') {
+      badgeColor = Colors.orange;
+    } else {
+      badgeColor = Colors.red;
+    }
+
+    // 2. Aplikasikan warnanya ke background, ikon, dan teks
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(
+        color: badgeColor.withOpacity(0.1), 
+        borderRadius: BorderRadius.circular(8)
+      ),
       child: Row(
         children: [
-          const Icon(Icons.circle, size: 8, color: Colors.red),
+          Icon(Icons.circle, size: 8, color: badgeColor),
           const SizedBox(width: 4),
-          Text(priority, style: const TextStyle(color: Colors.red, fontSize: 11)),
+          Text(priority, style: TextStyle(color: badgeColor, fontSize: 11)),
         ],
       ),
     );

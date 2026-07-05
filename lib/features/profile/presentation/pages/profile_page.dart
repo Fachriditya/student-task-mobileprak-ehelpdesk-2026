@@ -1,43 +1,69 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-// WAJIB IMPORT AUTH PROVIDER UNTUK AMBIL DATA USER & LOGOUT
 import '../../../auth/presentation/providers/auth_provider.dart'; 
 import '../providers/profile_provider.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/preference_tile.dart';
 
-class ProfilePage extends StatelessWidget {
+// 1. Ubah jadi StatefulWidget agar bisa memanggil fetchProfile() saat halaman dibuka
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
   @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  
+  @override
+  void initState() {
+    super.initState();
+    // 2. Ambil data profil terbaru dari Supabase tepat saat halaman dibuka
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProfileProvider>().fetchProfile();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // 1. Pantau ProfileProvider (untuk switch Dark Mode & Notif)
     final profile = context.watch<ProfileProvider>();
-    
-    // 2. Pantau AuthProvider (untuk data User)
     final auth = context.watch<AuthProvider>();
-    final user = auth.user;
     
-    // 3. Buat nama dinamis (Fallback ke "User" kalau null)
-    final userName = user?.username ?? "User";
-    // Bikin email bohongan berdasarkan username (Misal: Fachri Admin -> fachri.admin@email.com)
-    final userEmail = "${userName.toLowerCase().replaceAll(' ', '.')}@email.com";
+    // 3. LOGIKA KUNCI: Prioritaskan nama dari ProfileProvider yang up-to-date.
+    // Jika masih null (karena lagi loading), baru pakai data cadangan dari AuthProvider.
+    final displayName = profile.userProfile?.fullName ?? auth.user?.name ?? "User";
+    final displayEmail = profile.userProfile?.email ?? "${displayName.toLowerCase().replaceAll(' ', '.')}@email.com";
 
     return Scaffold(
       appBar: AppBar(title: const Text("Profile"), centerTitle: false),
-      body: SingleChildScrollView(
+      
+      // Beri efek loading di tengah layar jika data sedang diambil
+      body: profile.isLoading && profile.userProfile == null 
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF4B39EF))) 
+          : SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Gunakan variabel userName di sini
-            buildProfileHeader(userName, "January 2026"), 
+            
+            // Masukkan variabel displayName ke Header
+            buildProfileHeader(displayName, profile.userProfile?.joinDate ?? "January 2026"), 
             const SizedBox(height: 24),
             
             const Text("ACCOUNT", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
-            // Gunakan variabel userName dan userEmail di sini
-            ListTile(leading: const Icon(Icons.person_outline), title: Text(userName), subtitle: const Text("Full Name")),
-            ListTile(leading: const Icon(Icons.email_outlined), title: Text(userEmail), subtitle: const Text("Email")),
+            
+            // Masukkan variabel displayName ke ListTile
+            ListTile(
+              leading: const Icon(Icons.person_outline), 
+              title: Text(displayName), 
+              subtitle: const Text("Full Name"),
+              trailing: const Icon(Icons.edit, size: 20, color: Color(0xFF4B39EF)),
+              onTap: () {
+                // Panggil Pop-up Edit
+                _showEditNameDialog(context, displayName);
+              },
+            ),
+            ListTile(leading: const Icon(Icons.email_outlined), title: Text(displayEmail), subtitle: const Text("Email")),
             
             const SizedBox(height: 24),
             const Text("PREFERENCES", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
@@ -49,13 +75,11 @@ class ProfilePage extends StatelessWidget {
             }),
             
             const SizedBox(height: 24),
-            // --- LOGIKA SIGN OUT ---
+            
             TextButton(
               onPressed: () async {
-                await context.read<AuthProvider>().logout(); // Hapus token/sesi
-                
+                await context.read<AuthProvider>().logout(); 
                 if (context.mounted) {
-                  // Lempar kembali ke halaman login dan hapus semua history layar sebelumnya
                   Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
                 }
               }, 
@@ -67,6 +91,53 @@ class ProfilePage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  // --- WIDGET POP-UP EDIT ---
+  void _showEditNameDialog(BuildContext context, String currentName) {
+    final TextEditingController nameController = TextEditingController(text: currentName);
+    
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Edit Username", style: TextStyle(fontWeight: FontWeight.bold)),
+          content: TextField(
+            controller: nameController,
+            decoration: InputDecoration(
+              labelText: "Full Name",
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context), 
+              child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (nameController.text.trim().isNotEmpty) {
+                  // Jalankan fungsi update
+                  final success = await context.read<ProfileProvider>().updateUsername(nameController.text.trim());
+                  
+                  if (context.mounted) {
+                    Navigator.pop(context); // Tutup pop-up
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(success ? "Profile updated successfully!" : "Failed to update profile."),
+                        backgroundColor: success ? Colors.green : Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4B39EF)),
+              child: const Text("Save", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
     );
   }
 }

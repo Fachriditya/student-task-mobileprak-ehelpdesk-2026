@@ -3,7 +3,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import '../../../ticket/presentation/providers/ticket_provider.dart';
 
-// --- STAT CARD (INI YANG TADI HILANG) ---
 class StatCard extends StatelessWidget {
   final String label;
   final String count;
@@ -86,7 +85,6 @@ class TicketOverviewChart extends StatelessWidget {
                   PieChartSectionData(value: ticketData.openCount.toDouble(), color: Colors.blue, radius: 15, showTitle: false),
                   PieChartSectionData(value: ticketData.inProgressCount.toDouble(), color: Colors.orange, radius: 15, showTitle: false),
                   PieChartSectionData(value: ticketData.closedCount.toDouble(), color: Colors.green, radius: 15, showTitle: false),
-                  // Tambahan: Biar chart nggak blank kalau data kosong
                   if (ticketData.totalCount == 0)
                     PieChartSectionData(value: 1, color: Colors.grey.shade200, radius: 15, showTitle: false),
                 ],

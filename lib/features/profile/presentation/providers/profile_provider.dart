@@ -5,6 +5,9 @@ import '../../data/repositories/profile_repository.dart';
 class ProfileProvider extends ChangeNotifier {
   final ProfileRepository _repo = ProfileRepository();
 
+  List<UserProfileModel> _helpdeskUsers = [];
+  List<UserProfileModel> get helpdeskUsers => _helpdeskUsers;
+
   UserProfileModel? _userProfile;
   UserProfileModel? get userProfile => _userProfile;
 
@@ -39,5 +42,31 @@ class ProfileProvider extends ChangeNotifier {
   void toggleNotifications(bool value) {
     _notificationsEnabled = value;
     notifyListeners();
+  }
+
+  // Tambahkan fungsi ini untuk update nama
+  Future<bool> updateUsername(String newName) async {
+    _isLoading = true;
+    notifyListeners();
+
+    // UBAH 'full_name' MENJADI 'name' SESUAI DATABASE
+    bool success = await _repo.updateProfile({'name': newName}); 
+    
+    if (success) {
+      await fetchProfile(); 
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return success;
+  }
+
+  Future<void> loadHelpdeskUsers() async {
+    try {
+      _helpdeskUsers = await _repo.fetchHelpdeskUsers();
+      notifyListeners();
+    } catch (e) {
+      print("Error load helpdesk: $e");
+    }
   }
 }

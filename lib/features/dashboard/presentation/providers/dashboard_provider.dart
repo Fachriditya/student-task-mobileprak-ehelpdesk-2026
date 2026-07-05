@@ -18,7 +18,6 @@ class DashboardProvider extends ChangeNotifier {
     try {
       _data = await _repo.getDashboardData();
     } catch (e) {
-      // Handle error
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -17,7 +17,6 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   void _navigateToNext() async {
-    // Delay 3 detik
     await Future.delayed(const Duration(seconds: 3));
     
     if (!mounted) return;
@@ -34,16 +33,13 @@ class _SplashPageState extends State<SplashPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Menggunakan warna ungu
       backgroundColor: const Color(0xFF4B39EF), 
       body: Stack(
         alignment: Alignment.center,
         children: [
-          // Konten Utama (Tengah)
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo Headset dalam rounded box
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(

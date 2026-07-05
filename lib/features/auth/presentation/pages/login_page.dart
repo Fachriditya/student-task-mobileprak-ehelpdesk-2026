@@ -31,9 +31,9 @@ class _LoginPageState extends State<LoginPage> {
               width: double.infinity,
               padding: const EdgeInsets.only(top: 80, bottom: 40),
               decoration: const BoxDecoration(
-                color: Color(0xFF4B39EF), // Warna ungu sesuai desainmu
+                color: Color(0xFF4B39EF),
                 borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(0), // Bisa dikasih lengkungan kalau mau
+                  bottomLeft: Radius.circular(0), 
                   bottomRight: Radius.circular(0),
                 ),
               ),
@@ -84,42 +84,35 @@ class _LoginPageState extends State<LoginPage> {
                     isPassword: true,
                   ),
                   
-                  // FR-004: Reset Password [cite: 53]
+                  // Tombol Forgot Password 
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {}, // Nanti ke Forgot Password Page
+                      onPressed: () => Navigator.pushNamed(context, '/forgot-password'),
                       child: const Text("Forgot Password?", style: TextStyle(color: Color(0xFF4B39EF))),
                     ),
                   ),
                   const SizedBox(height: 12),
                   
-                  // Tombol Sign In (FR-001) [cite: 45]
+                  // Menampilkan Error dari Supabase (Jika password salah / email tidak ada)
+                  if (authProvider.errorMessage != null) ...[
+                    Text(
+                      authProvider.errorMessage!,
+                      style: const TextStyle(color: Colors.red, fontSize: 14),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  
+                  // Tombol Sign In
                   AppButton(
                     label: "Sign In",
                     isLoading: authProvider.isLoading,
                     onPressed: () => _handleLogin(context),
                   ),
                   
-                  const SizedBox(height: 16),
-                  const Center(child: Text("or", style: TextStyle(color: Colors.grey))),
-                  const SizedBox(height: 16),
-                  
-                  // Tombol Continue as Guest
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: OutlinedButton(
-                      onPressed: () {}, // Logika Guest
-                      style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text("Continue as Guest", style: TextStyle(color: Colors.black87)),
-                    ),
-                  ),
-                  
                   const SizedBox(height: 24),
-                  // FR-003: Register [cite: 50]
+                  
+                  // Tombol Pindah ke Register
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -140,18 +133,15 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _handleLogin(BuildContext context) async {
+    // ... (kodingan validasi di atasnya tetap sama)
+
     final authProvider = context.read<AuthProvider>();
     final success = await authProvider.login(_usernameController.text, _passwordController.text);
 
     if (success && mounted) {
-      final role = authProvider.user?.role;
-      if (role == AppConstants.roleAdmin) {
-        Navigator.pushReplacementNamed(context, '/dashboard-admin');
-      } else if (role == AppConstants.roleHelpdesk) {
-        Navigator.pushReplacementNamed(context, '/dashboard-helpdesk');
-      } else {
-        Navigator.pushReplacementNamed(context, '/dashboard-user');
-      }
+      // Semua user, baik admin, helpdesk, maupun pengguna, 
+      // dilempar ke /main. Biar MainPage yang mengurus tampilannya!
+      Navigator.pushReplacementNamed(context, '/main');
     }
   }
 }
