@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../main.dart'; // Import Supabase untuk keamanan fallback role
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/ticket_provider.dart';
 import '../widgets/ticket_widget.dart';
@@ -18,7 +19,10 @@ class _TicketListPageState extends State<TicketListPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final role = context.read<AuthProvider>().user?.role.toLowerCase() ?? '';
+      // Ambil role dengan tingkat keamanan ekstra (menggunakan metadata fallback)
+      final authRole = context.read<AuthProvider>().user?.role.toLowerCase() ?? '';
+      final role = authRole.isNotEmpty ? authRole : supabase.auth.currentUser?.userMetadata?['role']?.toString().toLowerCase() ?? '';
+      
       final hasAdminAccess = (role == 'admin' || role == 'isadmin' || role == 'issuperadmin');
       final isHelpdesk = (role == 'helpdesk');
 
@@ -33,17 +37,64 @@ class _TicketListPageState extends State<TicketListPage> {
     });
   }
 
+  // --- WIDGET FILTER MODERN (Zero to Hero UI) ---
+  Widget _buildFilterChips(TicketProvider provider) {
+    final List<String> filters = ["All", "Open", "Assign", "In Progress", "Closed"];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: filters.map((filter) {
+          final isSelected = provider.selectedFilter.toLowerCase() == filter.toLowerCase();
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: GestureDetector(
+              onTap: () => provider.setFilter(filter),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFF4B39EF) : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected ? const Color(0xFF4B39EF) : Colors.grey.shade300,
+                  ),
+                  boxShadow: isSelected 
+                      ? [BoxShadow(color: const Color(0xFF4B39EF).withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 3))] 
+                      : [],
+                ),
+                child: Text(
+                  filter,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.grey.shade700,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ticketProvider = context.watch<TicketProvider>();
     final authProvider = context.watch<AuthProvider>();
     
-    final role = authProvider.user?.role.toLowerCase() ?? 'pengguna';
+    // Keamanan role ganda di UI
+    final authRole = authProvider.user?.role.toLowerCase() ?? '';
+    final role = authRole.isNotEmpty ? authRole : supabase.auth.currentUser?.userMetadata?['role']?.toString().toLowerCase() ?? 'pengguna';
+    
     final hasAdminAccess = (role == 'admin' || role == 'isadmin' || role == 'issuperadmin');
     final isHelpdesk = (role == 'helpdesk');
 
-    // Logic penentuan list data yang dipakai
-    final displayTickets = hasAdminAccess ? ticketProvider.allTickets : ticketProvider.tickets;
+    // 👇 PERBAIKAN KRUSIAL: Semua role HARUS menggunakan .tickets agar filternya bekerja!
+    final displayTickets = ticketProvider.tickets;
 
     // Logic penentuan Teks UI
     String titleText = "My Tickets";
@@ -53,13 +104,16 @@ class _TicketListPageState extends State<TicketListPage> {
       titleText = "All Tickets";
       searchHint = "Search all tickets...";
     } else if (isHelpdesk) {
-      titleText = "My Tasks"; // Teks khusus Helpdesk
+      titleText = "My Tasks"; 
       searchHint = "Search tasks...";
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(titleText, style: const TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black87),
+        title: Text(titleText, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
       ),
       body: Column(
         children: [
@@ -68,41 +122,27 @@ class _TicketListPageState extends State<TicketListPage> {
             child: TextField(
               decoration: InputDecoration(
                 hintText: searchHint,
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search, color: Colors.grey),
                 filled: true,
-                fillColor: Colors.grey.withOpacity(0.1),
+                // PERBAIKAN: withValues(alpha: ...)
+                fillColor: Colors.grey.withValues(alpha: 0.1), 
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
               ),
             ),
           ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: ["All", "Open", "Assign", "In Progress", "Closed"].map((filter) {
-                bool isSelected = ticketProvider.selectedFilter == filter;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    label: Text(filter),
-                    selected: isSelected,
-                    onSelected: (_) => ticketProvider.setFilter(filter),
-                    selectedColor: const Color(0xFF4B39EF),
-                    labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
+          
+          // --- Panggil Widget Filter ---
+          _buildFilterChips(ticketProvider),
+          
           const SizedBox(height: 16),
           
           Expanded(
             child: ticketProvider.errorMessage != null 
             ? Center(child: Text(ticketProvider.errorMessage!, style: const TextStyle(color: Colors.red)))
             : ticketProvider.isLoading 
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(child: CircularProgressIndicator(color: Color(0xFF4B39EF)))
               : displayTickets.isEmpty 
-                ? const Center(child: Text("Belum ada tiket saat ini."))
+                ? _buildEmptyState() // Tampilan saat list kosong
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: displayTickets.length,
@@ -118,7 +158,10 @@ class _TicketListPageState extends State<TicketListPage> {
                             ),
                           );
                         },
-                        child: TicketCard(ticket: currentTicket), 
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0), // Jarak antar tiket
+                          child: TicketCard(ticket: currentTicket),
+                        ), 
                       );
                     },
                   ),
@@ -133,6 +176,21 @@ class _TicketListPageState extends State<TicketListPage> {
             backgroundColor: const Color(0xFF4B39EF),
             child: const Icon(Icons.add, color: Colors.white),
           ),
+    );
+  }
+
+  // --- TAMPILAN JIKA LIST KOSONG ---
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.assignment_outlined, size: 64, color: Colors.grey[300]),
+          const SizedBox(height: 16),
+          const Text("Tidak ada tiket", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+          const Text("Kategori ini masih kosong melompong.", style: TextStyle(color: Colors.grey, fontSize: 12)),
+        ],
+      ),
     );
   }
 }

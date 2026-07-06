@@ -1,5 +1,7 @@
 class TicketModel {
   final String id;
+  final String userId;
+  final String? helpdeskId;
   final String title;
   final String description;
   final String category; // <-- INI YANG TADI KETINGGALAN
@@ -14,6 +16,8 @@ class TicketModel {
 
   TicketModel({
     required this.id,
+    required this.userId,
+    this.helpdeskId,
     required this.title,
     required this.description,
     required this.category, // <-- TAMBAH DI SINI
@@ -28,12 +32,13 @@ class TicketModel {
   factory TicketModel.fromJson(Map<String, dynamic> json) {
     return TicketModel(
       id: json['id'] ?? '',
+      userId: json['user_id'] ?? '',
+      helpdeskId: json['assigned_to'],
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       category: json['category'] ?? 'General', // <-- TANGKAP DATA DARI DATABASE
       status: json['status'] ?? 'open',
       priority: json['priority'] ?? 'Medium', 
-      
       attachmentCount: json['attachment_url'] != null ? 1 : 0, 
       commentCount: 0, 
       date: json['created_at'] ?? '', 

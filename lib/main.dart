@@ -19,6 +19,7 @@ import 'package:helpdesk_app/features/ticket/presentation/pages/create_ticket_pa
 import 'package:helpdesk_app/features/ticket/presentation/pages/ticket_list_page.dart';
 import 'package:helpdesk_app/features/auth/presentation/pages/register_page.dart';
 import 'package:helpdesk_app/features/auth/presentation/pages/forgot_password_page.dart';
+import 'package:helpdesk_app/features/profile/presentation/pages/profile_page.dart';
 
 import 'package:helpdesk_app/features/dashboard/presentation/pages/admin_dashboard_page.dart';
 
@@ -59,13 +60,10 @@ class MyApp extends StatelessWidget {
     return Consumer<ProfileProvider>(
       builder: (context, profileProvider, child) {
         return MaterialApp(
-          title: 'HelpDesk App',
-          debugShowCheckedModeBanner: false,
-          
-          themeMode: profileProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-          theme: AppTheme.lightTheme, 
-          darkTheme: AppTheme.darkTheme, 
-          
+          title: 'Helpdesk App',
+          themeMode: profileProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light, // <-- Panggil tema terang di sini
+          darkTheme: AppTheme.darkTheme, // <-- Panggil tema gelap di sini
+          debugShowCheckedModeBanner: false,       
           initialRoute: '/',
           routes: {
             '/': (context) => const SplashPage(),

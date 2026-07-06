@@ -55,7 +55,7 @@ class NotificationRepository {
 
   // 4. Menembak Notifikasi ke SEMUA ADMIN (Saat User Bikin Tiket Baru)
   Future<void> notifyAllAdmins({
-    required String ticketId, 
+    String? ticketId, 
     required String title, 
     required String message
   }) async {

@@ -5,6 +5,7 @@ import '../../../ticket/presentation/providers/ticket_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../widgets/dashboard_widget.dart';
 import '../../../ticket/presentation/pages/ticket_list_page.dart';
+import '../../../notification/presentation/widgets/notification_bell.dart';
 
 class HelpdeskDashboardPage extends StatefulWidget {
   const HelpdeskDashboardPage({super.key});
@@ -32,7 +33,6 @@ class _HelpdeskDashboardPageState extends State<HelpdeskDashboardPage> {
     final String displayName = profileProvider.userProfile?.fullName ?? authProvider.user?.name ?? "Helpdesk";
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
         child: ticketProvider.isLoading
             ? const Center(child: CircularProgressIndicator(color: Color(0xFF4B39EF)))
@@ -96,7 +96,6 @@ class _HelpdeskDashboardPageState extends State<HelpdeskDashboardPage> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Gunakan warna Teal (Hijau kebiruan) khusus untuk Helpdesk
             const Text("Helpdesk Workspace 👨‍💻", style: TextStyle(color: Colors.teal, fontSize: 14, fontWeight: FontWeight.bold)),
             Text(
               name, 
@@ -104,10 +103,16 @@ class _HelpdeskDashboardPageState extends State<HelpdeskDashboardPage> {
             ),
           ],
         ),
-        const CircleAvatar(
-          radius: 24,
-          backgroundColor: Colors.teal, 
-          child: Icon(Icons.support_agent, color: Colors.white),
+        Row(
+          children: [
+            const NotificationBell(), // Lonceng notifikasi
+            const SizedBox(width: 12),
+            const CircleAvatar(
+              radius: 24,
+              backgroundColor: Colors.teal, 
+              child: Icon(Icons.support_agent, color: Colors.white), // Kembali pakai Icon
+            ),
+          ],
         )
       ],
     );

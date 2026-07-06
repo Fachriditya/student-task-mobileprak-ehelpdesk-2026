@@ -5,8 +5,8 @@ import 'package:helpdesk_app/features/ticket/presentation/providers/ticket_provi
 import 'package:helpdesk_app/core/constants/app_constants.dart';
 import '../widgets/dashboard_widget.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
-// IMPORT DIPERBAIKI: Mengarah ke TicketListPage
-import '../../../ticket/presentation/pages/ticket_list_page.dart'; 
+import '../../../ticket/presentation/pages/ticket_list_page.dart';
+import '../../../notification/presentation/widgets/notification_bell.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -34,7 +34,6 @@ class DashboardPage extends StatelessWidget {
     final String displayName = profileProvider.userProfile?.fullName ?? authProvider.user?.name ?? "User";
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), 
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -47,13 +46,7 @@ class DashboardPage extends StatelessWidget {
               _buildStatGrid(ticketProvider),
               const SizedBox(height: 24),
               
-              const Text(
-                "Ticket Overview", 
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
-              ),
-              const SizedBox(height: 12),
-              const TicketOverviewChart(), 
-              const SizedBox(height: 24),
+              // PIE CHART SUDAH DIHAPUS DARI SINI
               
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -65,7 +58,6 @@ class DashboardPage extends StatelessWidget {
                   if (ticketProvider.tickets.isNotEmpty)
                     TextButton(
                       onPressed: () {
-                        // ROUTING DIPERBAIKI: Mengarah ke TicketListPage
                         Navigator.push(
                           context, 
                           MaterialPageRoute(builder: (context) => const TicketListPage())
@@ -101,20 +93,26 @@ class DashboardPage extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Hello 👋", style: TextStyle(color: Colors.grey, fontSize: 14)),
+            const Text("Hello 👋", style: TextStyle(color: Colors.grey, fontSize: 14)), 
             Text(
               name, 
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)
             ),
           ],
         ),
-        CircleAvatar(
-          radius: 24,
-          backgroundColor: const Color(0xFF4B39EF),
-          child: Text(
-            _getInitials(name), 
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)
-          ),
+        Row(
+          children: [
+            const NotificationBell(), 
+            const SizedBox(width: 12),
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: const Color(0xFF4B39EF), 
+              child: Text(
+                _getInitials(name), 
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)
+              ),
+            ),
+          ],
         )
       ],
     );
@@ -226,9 +224,7 @@ class DashboardPage extends StatelessWidget {
               ),
             ),
             trailing: _buildPriorityBadge(ticket.priority),
-            onTap: () {
-              // Kosongkan sementara
-            },
+            onTap: () {},
           ),
         );
       },
@@ -239,7 +235,8 @@ class DashboardPage extends StatelessWidget {
     Color color = priority.toLowerCase() == 'high' ? Colors.red : (priority.toLowerCase() == 'medium' ? Colors.orange : Colors.teal);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+      // PERBAIKAN: withValues
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
       child: Text(
         priority, 
         style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)

@@ -34,7 +34,7 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CommentProvider>().fetchComments(widget.ticket.id);
       
-      final role = context.read<AuthProvider>().user?.role.toLowerCase() ?? '';
+      final role = context.read<AuthProvider>().user?.role.toLowerCase() ?? supabase.auth.currentUser?.userMetadata?['role']?.toString().toLowerCase() ?? '';
       final hasAdminAccess = (role == 'admin' || role == 'isadmin' || role == 'issuperadmin');
       
       if (hasAdminAccess) {
@@ -75,12 +75,17 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
       _selectedFileName = null;
     });
     
+    final role = context.read<AuthProvider>().user?.role.toLowerCase() 
+                 ?? supabase.auth.currentUser?.userMetadata?['role']?.toString().toLowerCase() 
+                 ?? 'user';
+
     await context.read<CommentProvider>().sendComment(
-      widget.ticket.id, 
+      widget.ticket, 
       textToSend,
+      role, 
       fileBytes: fileBytesToSend,
       fileName: fileNameToSend,
-    );
+    );  
   }
 
   @override
@@ -89,17 +94,14 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
     final authProvider = context.watch<AuthProvider>();
     final currentUserId = supabase.auth.currentUser?.id;
     
-    final role = authProvider.user?.role.toLowerCase() ?? '';
+    final role = authProvider.user?.role.toLowerCase() ?? supabase.auth.currentUser?.userMetadata?['role']?.toString().toLowerCase() ?? '';
     final hasAdminAccess = (role == 'admin' || role == 'isadmin' || role == 'issuperadmin');
     final isHelpdesk = (role == 'helpdesk');
     
-    // --- LOGIKA STATUS TIKET ---
     final isTicketClosed = widget.ticket.status.toLowerCase() == 'closed';
-    // Tombol close hanya muncul kalau tiket belum ditutup & yang buka admin/helpdesk
     final canCloseTicket = !isTicketClosed && isHelpdesk;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -139,7 +141,8 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
                 children: [
                   
                   // --- SECTION ADMIN ONLY: ASSIGN HELPDESK ---
-                  if (hasAdminAccess && !isTicketClosed)
+                  // 👇 HANYA ADA 1 BLOK SEKARANG DENGAN LOGIKA PENJAGA YANG SUPER KETAT
+                  if (hasAdminAccess && !isTicketClosed && (widget.ticket.helpdeskId == null || widget.ticket.helpdeskId!.isEmpty)) ...[
                     _buildCardContainer(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -169,9 +172,9 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
                                 final success = await context.read<TicketProvider>().assignTicketToHelpdesk(widget.ticket.id, selectedHelpdeskId!);
                                 
                                 if (success && mounted) {
-                                await context.read<HistoryProvider>().addHistoryLog(widget.ticket.id, 'Tiket ditugaskan kepada Helpdesk');
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Ticket successfully assigned!")));
-                                Navigator.pop(context); // Kembali agar UI ter-refresh 
+                                  await context.read<HistoryProvider>().addHistoryLog(widget.ticket.id, 'Tiket ditugaskan kepada Helpdesk');
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Ticket successfully assigned!")));
+                                  Navigator.pop(context); // Kembali agar UI ter-refresh 
                                 }
                               },
                               child: const Text("Execute Assign", style: TextStyle(color: Colors.white)),
@@ -180,7 +183,8 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
                         ],
                       ),
                     ),
-                  if (hasAdminAccess && !isTicketClosed) const SizedBox(height: 16),
+                    const SizedBox(height: 16),
+                  ],
 
                   // 1. SECTION: HEADER TICKET
                   _buildCardContainer(
@@ -303,7 +307,7 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5))],
                 ),
                 child: SafeArea(
                   child: Column(
@@ -316,12 +320,11 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
                           width: double.infinity,
                           child: ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.teal, // Warna pembeda untuk action penyelesaian
+                              backgroundColor: Colors.teal, 
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               padding: const EdgeInsets.symmetric(vertical: 12)
                             ),
                             onPressed: () async {
-                              // Tampilkan dialog konfirmasi biar ga kepencet
                               final confirm = await showDialog<bool>(
                                 context: context,
                                 builder: (context) => AlertDialog(
@@ -338,12 +341,11 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
                                 )
                               );
 
-                              // Eksekusi penutupan tiket jika konfirmasi "Ya"
                               if (confirm == true) {
                                 final success = await context.read<TicketProvider>().closeTicket(widget.ticket.id);
                                 if (success && mounted) {
                                   await context.read<HistoryProvider>().addHistoryLog(widget.ticket.id, 'Tiket telah diselesaikan dan ditutup');
-                                  Navigator.pop(context); // Kembali ke list page
+                                  Navigator.pop(context); 
                                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Ticket Successfully Closed!")));
                                 }
                               }
@@ -429,7 +431,6 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
   }
 
   // --- WIDGET HELPERS ---
-  // (Sama persis seperti sebelumnya)
   Widget _buildCardContainer({required Widget child}) {
     return Container(
       width: double.infinity, padding: const EdgeInsets.all(20),
@@ -441,7 +442,7 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
   Widget _buildStatusPill(String status) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(color: const Color(0xFFEef2FF), borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF4B39EF).withOpacity(0.2))),
+      decoration: BoxDecoration(color: const Color(0xFFEef2FF), borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF4B39EF).withValues(alpha: 0.2))),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -470,7 +471,7 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
     Color color = priority.toLowerCase() == 'high' ? Colors.red : (priority.toLowerCase() == 'medium' ? Colors.orange : Colors.teal);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withOpacity(0.3))),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withValues(alpha: 0.3))),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

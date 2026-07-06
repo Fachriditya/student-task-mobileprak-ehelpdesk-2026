@@ -31,12 +31,6 @@ class _MainPageState extends State<MainPage> {
       ];
     } else if (role == 'helpdesk') {
       return [
-        const Center(child: Text("Helpdesk Dashboard Soon")), // Dashboard Helpdesk
-        const TicketListPage(),     // 1. Ticket List (Mode Helpdesk)
-        const ProfilePage(),        // 2. Profil
-      ];
-    } else if (role == 'helpdesk') {
-      return [
         const HelpdeskDashboardPage(), // <-- Ganti baris ini
         const TicketListPage(),     
         const ProfilePage(),        

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../main.dart'; // 👇 IMPORT SAKTI SUPABASE DITAMBAHKAN
 import '../../../auth/presentation/providers/auth_provider.dart'; 
 import '../providers/profile_provider.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/preference_tile.dart';
 
-// 1. Ubah jadi StatefulWidget agar bisa memanggil fetchProfile() saat halaman dibuka
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -18,7 +18,6 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    // 2. Ambil data profil terbaru dari Supabase tepat saat halaman dibuka
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProfileProvider>().fetchProfile();
     });
@@ -29,15 +28,22 @@ class _ProfilePageState extends State<ProfilePage> {
     final profile = context.watch<ProfileProvider>();
     final auth = context.watch<AuthProvider>();
     
-    // 3. LOGIKA KUNCI: Prioritaskan nama dari ProfileProvider yang up-to-date.
-    // Jika masih null (karena lagi loading), baru pakai data cadangan dari AuthProvider.
     final displayName = profile.userProfile?.fullName ?? auth.user?.name ?? "User";
-    final displayEmail = profile.userProfile?.email ?? "${displayName.toLowerCase().replaceAll(' ', '.')}@email.com";
+    
+    // 👇 PERBAIKAN BUG EMAIL: Tarik paksa dari inti Supabase!
+    final displayEmail = supabase.auth.currentUser?.email ?? "No Email Found";
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Profile"), centerTitle: false),
+      // 👇 PERBAIKAN TOMBOL KEMBALI BIAR PASTI MUNCUL
+      appBar: AppBar(
+        title: const Text("Profile", style: TextStyle(fontWeight: FontWeight.bold)), 
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, size: 18),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       
-      // Beri efek loading di tengah layar jika data sedang diambil
       body: profile.isLoading && profile.userProfile == null 
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF4B39EF))) 
           : SingleChildScrollView(
@@ -46,24 +52,27 @@ class _ProfilePageState extends State<ProfilePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             
-            // Masukkan variabel displayName ke Header
-            buildProfileHeader(displayName, profile.userProfile?.joinDate ?? "January 2026"), 
+            buildProfileHeader(displayName, profile.userProfile?.joinDate ?? "2026"), 
             const SizedBox(height: 24),
             
             const Text("ACCOUNT", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
             
-            // Masukkan variabel displayName ke ListTile
             ListTile(
+              contentPadding: EdgeInsets.zero, // Biar rata kiri
               leading: const Icon(Icons.person_outline), 
-              title: Text(displayName), 
+              title: Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold)), 
               subtitle: const Text("Full Name"),
               trailing: const Icon(Icons.edit, size: 20, color: Color(0xFF4B39EF)),
               onTap: () {
-                // Panggil Pop-up Edit
                 _showEditNameDialog(context, displayName);
               },
             ),
-            ListTile(leading: const Icon(Icons.email_outlined), title: Text(displayEmail), subtitle: const Text("Email")),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.email_outlined), 
+              title: Text(displayEmail, style: const TextStyle(fontWeight: FontWeight.bold)), 
+              subtitle: const Text("Email")
+            ),
             
             const SizedBox(height: 24),
             const Text("PREFERENCES", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
@@ -74,18 +83,26 @@ class _ProfilePageState extends State<ProfilePage> {
               profile.toggleNotifications(val);
             }),
             
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             
-            TextButton(
-              onPressed: () async {
-                await context.read<AuthProvider>().logout(); 
-                if (context.mounted) {
-                  Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-                }
-              }, 
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Row(
-                children: [Icon(Icons.logout), SizedBox(width: 8), Text("Sign Out")],
+            // 👇 PERBAIKAN TOMBOL LOGOUT: Biar cakep & profesional
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  await context.read<AuthProvider>().logout(); 
+                  if (context.mounted) {
+                    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                  }
+                }, 
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  side: const BorderSide(color: Colors.red),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+                ),
+                icon: const Icon(Icons.logout),
+                label: const Text("Sign Out", style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -118,11 +135,10 @@ class _ProfilePageState extends State<ProfilePage> {
             ElevatedButton(
               onPressed: () async {
                 if (nameController.text.trim().isNotEmpty) {
-                  // Jalankan fungsi update
                   final success = await context.read<ProfileProvider>().updateUsername(nameController.text.trim());
                   
                   if (context.mounted) {
-                    Navigator.pop(context); // Tutup pop-up
+                    Navigator.pop(context); 
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(success ? "Profile updated successfully!" : "Failed to update profile."),

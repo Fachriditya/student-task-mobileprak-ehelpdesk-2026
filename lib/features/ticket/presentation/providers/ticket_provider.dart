@@ -1,11 +1,13 @@
 import '../../../../main.dart'; // Sesuaikan jumlah '../' agar pas mengarah ke main.dart
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+// import supabase_flutter SUDAH DIHAPUS DARI SINI
 import '../../data/models/ticket_model.dart';
 import '../../data/repositories/ticket_repository.dart'; 
+import '../../../notification/data/repositories/notification_repository.dart';
 
 class TicketProvider extends ChangeNotifier {
   final TicketRepository _ticketRepository = TicketRepository();
+  final NotificationRepository _notificationRepo = NotificationRepository();
 
   List<TicketModel> _allTickets = []; 
 
@@ -16,7 +18,9 @@ class TicketProvider extends ChangeNotifier {
   // GETTERS UNTUK UI
   List<TicketModel> get tickets {
     if (_selectedFilter == "All") return _allTickets;
-    return _allTickets.where((t) => t.status.toLowerCase() == _selectedFilter.toLowerCase()).toList();
+    return _allTickets.where((t) {
+      return t.status.trim().toLowerCase() == _selectedFilter.trim().toLowerCase();
+    }).toList();
   }
   List<TicketModel> get allTickets => _allTickets;
 
@@ -59,7 +63,6 @@ class TicketProvider extends ChangeNotifier {
     notifyListeners(); 
     
     try {
-      // Kita panggil fungsi khusus dari repository
       _allTickets = await _ticketRepository.fetchHelpdeskTickets();
     } catch (e) {
       _errorMessage = e.toString();
@@ -76,8 +79,10 @@ class TicketProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final title = data['title'] ?? "New Support Ticket";
+      
       final success = await _ticketRepository.createTicket(
-        title: data['title'] ?? "New Support Ticket",
+        title: title,
         category: data['category'] ?? "General",
         priority: data['priority'] ?? "Medium",
         description: data['description'] ?? "",
@@ -86,6 +91,13 @@ class TicketProvider extends ChangeNotifier {
       );
 
       if (success) {
+        // TEMBAK NOTIFIKASI KE SEMUA ADMIN
+        await _notificationRepo.notifyAllAdmins(
+          ticketId: null, 
+          title: 'Tiket Baru Masuk! 🚨',
+          message: 'Ada tiket baru: "$title". Segera cek dan tugaskan ke teknisi.',
+        );
+
         await loadTickets(); 
       }
       
@@ -142,7 +154,27 @@ class TicketProvider extends ChangeNotifier {
 
     try {
       final success = await _ticketRepository.assignHelpdesk(ticketId, helpdeskId);
+      
       if (success) {
+        // Cari data tiket menggunakan _allTickets
+        final ticket = _allTickets.firstWhere((t) => t.id == ticketId);
+
+        // TEMBAK NOTIFIKASI KE HELPDESK
+        await _notificationRepo.sendNotification(
+          targetUserId: helpdeskId,
+          ticketId: ticketId,
+          title: 'Tugas Baru: ${ticket.title}',
+          message: 'Admin menugaskan tiket ini kepadamu. Segera cek dan proses!',
+        );
+
+        // TEMBAK NOTIFIKASI KE USER (PEMILIK TIKET)
+        await _notificationRepo.sendNotification(
+          targetUserId: ticket.userId, 
+          ticketId: ticketId,
+          title: 'Tiket Diproses 🚀',
+          message: 'Tiket "${ticket.title}" sedang ditangani oleh tim teknisi kami.',
+        );
+
         await loadAllTickets(); 
       }
       return success;
@@ -160,13 +192,25 @@ class TicketProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Kita pakai fungsi updateTicketStatus dari repository yang sudah ada
       final success = await _ticketRepository.updateTicketStatus(ticketId, 'closed');
       
       if (success) {
-        // Tarik ulang data sesuai role agar list di depan ikut ter-update
+        // Cari data tiket menggunakan _allTickets
+        final ticket = _allTickets.firstWhere((t) => t.id == ticketId);
+
+        // TEMBAK NOTIFIKASI KE USER
+        await _notificationRepo.sendNotification(
+          targetUserId: ticket.userId,
+          ticketId: ticketId,
+          title: 'Tiket Selesai ✅',
+          message: 'Masalah pada tiket "${ticket.title}" telah diselesaikan dan ditutup. Terima kasih!',
+        );
+
+        // Logika refresh list sesuai role pengguna yang login
         final role = supabase.auth.currentUser?.userMetadata?['role']?.toString().toLowerCase() ?? '';
-        if (role == 'admin' || role == 'isadmin' || role == 'issuperadmin') {
+        
+        // --- PERBAIKAN ROLE ADMIN DI SINI ---
+        if (role == 'isadmin' || role == 'issuperadmin') {
           await loadAllTickets();
         } else if (role == 'helpdesk') {
           await loadHelpdeskTickets();

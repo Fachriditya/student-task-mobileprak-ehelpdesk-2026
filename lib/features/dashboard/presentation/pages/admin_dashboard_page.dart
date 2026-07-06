@@ -4,8 +4,8 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../ticket/presentation/providers/ticket_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../widgets/dashboard_widget.dart';
-// IMPORT DIPERBAIKI: Mengarah ke TicketListPage, bukan HistoryPage
 import '../../../ticket/presentation/pages/ticket_list_page.dart'; 
+import '../../../notification/presentation/widgets/notification_bell.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -32,7 +32,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     final String displayName = profileProvider.userProfile?.fullName ?? authProvider.user?.name ?? "Admin";
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
         child: ticketProvider.isLoading
             ? const Center(child: CircularProgressIndicator(color: Color(0xFF4B39EF)))
@@ -52,6 +51,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     _buildStatGrid(ticketProvider),
                     const SizedBox(height: 24),
                     
+                    // ---> PIE CHART ADMIN KITA TAMBAHKAN DI SINI <---
+                    const Text(
+                      "Analytics Chart", 
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
+                    ),
+                    const SizedBox(height: 12),
+                    const TicketOverviewChart(), // Memanggil Pie Chart
+                    const SizedBox(height: 24),
+                    
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -62,7 +70,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                         if (ticketProvider.tickets.isNotEmpty)
                           TextButton(
                             onPressed: () {
-                              // ROUTING DIPERBAIKI: Mengarah ke TicketListPage
                               Navigator.push(
                                 context, 
                                 MaterialPageRoute(builder: (context) => const TicketListPage())
@@ -103,10 +110,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             ),
           ],
         ),
-        const CircleAvatar(
-          radius: 24,
-          backgroundColor: Colors.amber, 
-          child: Icon(Icons.admin_panel_settings, color: Colors.white),
+        Row(
+          children: [
+            const NotificationBell(),
+            const SizedBox(width: 12),
+            const CircleAvatar(
+              radius: 24,
+              backgroundColor: Colors.amber, 
+              child: Icon(Icons.admin_panel_settings, color: Colors.white), 
+            ),
+          ],
         )
       ],
     );
@@ -184,9 +197,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               ),
             ),
             trailing: _buildPriorityBadge(ticket.priority),
-            onTap: () {
-              // Kosongkan sementara atau hubungkan ke Ticket Detail
-            },
+            onTap: () {},
           ),
         );
       },
@@ -197,7 +208,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     Color color = priority.toLowerCase() == 'high' ? Colors.red : (priority.toLowerCase() == 'medium' ? Colors.orange : Colors.teal);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+      // PERBAIKAN: withValues
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
       child: Text(
         priority, 
         style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)
