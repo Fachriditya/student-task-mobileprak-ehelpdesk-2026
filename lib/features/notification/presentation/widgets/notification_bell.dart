@@ -28,7 +28,7 @@ class _NotificationBellState extends State<NotificationBell> {
       alignment: Alignment.center,
       children: [
         IconButton(
-          icon: const Icon(Icons.notifications_outlined, color: Colors.black87, size: 28),
+          icon:Icon(Icons.notifications_outlined, color: Theme.of(context).iconTheme.color ?? Colors.grey, size: 28),
           onPressed: () {
             Navigator.push(
               context,

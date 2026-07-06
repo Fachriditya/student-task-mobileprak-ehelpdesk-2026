@@ -27,16 +27,15 @@ class _TicketHistoryPageState extends State<TicketHistoryPage> {
     final historyProvider = context.watch<HistoryProvider>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.black87),
+        iconTheme: IconThemeData(color: Theme.of(context).iconTheme.color),
         title: Column(
           children: [
-            const Text("Ticket Journey", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87)),
-            Text(widget.ticketTitle, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+            Text("Ticket Journey", style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(widget.ticketTitle, style: const TextStyle(color: Colors.grey, fontSize: 12)),
           ],
         ),
       ),
@@ -79,7 +78,7 @@ class _TicketHistoryPageState extends State<TicketHistoryPage> {
                                 Container(
                                   width: 16, height: 16,
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF4B39EF),
+                                    color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
                                     shape: BoxShape.circle,
                                     border: Border.all(color: const Color(0xFFEef2FF), width: 3),
                                   ),
@@ -99,7 +98,9 @@ class _TicketHistoryPageState extends State<TicketHistoryPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(history.action, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87)),
+                                  Text(history.action, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface,
+                                    ),
+                                  ),
                                   const SizedBox(height: 4),
                                   Text("Oleh: ${history.changerName}", style: const TextStyle(fontSize: 12, color: Colors.grey)),
                                   const SizedBox(height: 32), // Jarak ke item berikutnya

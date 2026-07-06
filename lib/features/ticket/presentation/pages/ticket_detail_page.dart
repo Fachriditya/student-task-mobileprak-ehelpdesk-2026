@@ -103,19 +103,19 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         leadingWidth: 100,
         leading: TextButton.icon(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios, size: 14, color: Colors.black87),
-          label: const Text("Back", style: TextStyle(color: Colors.black87, fontSize: 14)),
+          icon: Icon(Icons.arrow_back_ios, size: 14, color: Theme.of(context).iconTheme.color),
+          label: Text("Back", style: TextStyle(color: Theme.of(context).iconTheme.color, fontSize: 14)),
         ),
-        title: const Text("Ticket Details", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black54)),
+        title: Text("Ticket Details", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.history, color: Colors.black87),
+            icon: Icon(Icons.history, color: Theme.of(context).iconTheme.color),
             onPressed: () {
               Navigator.push(
                 context,
@@ -227,7 +227,7 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
                       children: [
                         const Text("DESCRIPTION", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.2)),
                         const SizedBox(height: 12),
-                        Text(widget.ticket.description, style: const TextStyle(fontSize: 14, height: 1.5, color: Colors.black87)),
+                        Text(widget.ticket.description, style: TextStyle(fontSize: 14, height: 1.5, color: Colors.black87)),
                       ],
                     ),
                   ),
@@ -306,7 +306,7 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
             : Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardTheme.color,
                   boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5))],
                 ),
                 child: SafeArea(
@@ -402,7 +402,7 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
                                 hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                 filled: true,
-                                fillColor: const Color(0xFFF8F9FA),
+                                fillColor: Theme.of(context).scaffoldBackgroundColor,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(24),
                                   borderSide: BorderSide.none,
@@ -434,7 +434,7 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
   Widget _buildCardContainer({required Widget child}) {
     return Container(
       width: double.infinity, padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200)),
+      decoration: BoxDecoration(color: Theme.of(context).cardTheme.color, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200)),
       child: child,
     );
   }
@@ -456,7 +456,7 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
   Widget _buildTagPill(IconData icon, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade300)),
+      decoration: BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade300)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -471,7 +471,7 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
     Color color = priority.toLowerCase() == 'high' ? Colors.red : (priority.toLowerCase() == 'medium' ? Colors.orange : Colors.teal);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withValues(alpha: 0.3))),
+      decoration: BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor, borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withValues(alpha: 0.3))),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -487,11 +487,11 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
     return Row(
       children: [
         _buildStep("Open", isActive: true), 
-        Expanded(child: Container(height: 2, color: const Color(0xFFEEEEEE))),
+        Expanded(child: Container(height: 2, color: Theme.of(context).dividerColor.withValues(alpha: 0.1))),
         _buildStep("Assign", isActive: status == "assign" || status == "in progress" || status == "closed"),
-        Expanded(child: Container(height: 2, color: const Color(0xFFEEEEEE))),
+        Expanded(child: Container(height: 2, color: Theme.of(context).dividerColor.withValues(alpha: 0.1))),
         _buildStep("In Progress", isActive: status == "in progress" || status == "closed"),
-        Expanded(child: Container(height: 2, color: const Color(0xFFEEEEEE))),
+        Expanded(child: Container(height: 2, color: Theme.of(context).dividerColor.withValues(alpha: 0.1))),
         _buildStep("Closed", isActive: status == "closed"),
       ],
     );
@@ -502,13 +502,13 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
       children: [
         Container(
           width: 24, height: 24,
-          decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: isActive ? const Color(0xFF4B39EF) : Colors.grey.shade300, width: 2), color: Colors.white),
+          decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: isActive ? const Color(0xFF4B39EF) : Colors.grey.shade300, width: 2), color: Theme.of(context).cardTheme.color),
           child: Center(
             child: Container(width: 10, height: 10, decoration: BoxDecoration(shape: BoxShape.circle, color: isActive ? const Color(0xFF4B39EF) : Colors.transparent)),
           ),
         ),
         const SizedBox(height: 8),
-        Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isActive ? Colors.black87 : Colors.grey)),
+        Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isActive ? Theme.of(context).colorScheme.onSurface : Colors.grey)),
       ],
     );
   }

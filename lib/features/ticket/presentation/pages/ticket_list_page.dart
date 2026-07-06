@@ -56,10 +56,10 @@ class _TicketListPageState extends State<TicketListPage> {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFF4B39EF) : Colors.white,
+                  color: isSelected ? const Color(0xFF4B39EF) : Theme.of(context).cardTheme.color,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSelected ? const Color(0xFF4B39EF) : Colors.grey.shade300,
+                    color: isSelected ? const Color(0xFF4B39EF) : Theme.of(context).dividerColor.withValues(alpha: 0.2),
                   ),
                   boxShadow: isSelected 
                       ? [BoxShadow(color: const Color(0xFF4B39EF).withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 3))] 
@@ -68,7 +68,7 @@ class _TicketListPageState extends State<TicketListPage> {
                 child: Text(
                   filter,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.grey.shade700,
+                    color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyMedium?.color,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     fontSize: 13,
                   ),
@@ -110,10 +110,12 @@ class _TicketListPageState extends State<TicketListPage> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
-        title: Text(titleText, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+        iconTheme: IconThemeData(
+          color: Theme.of(context).iconTheme.color,
+        ),
+        title: Text(titleText, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color)),
       ),
       body: Column(
         children: [

@@ -24,11 +24,18 @@ class _NotificationPageState extends State<NotificationPage> {
     final provider = context.watch<NotificationProvider>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      // 👇 Scaffold dilepas backgroundColor-nya agar otomatis ikut AppTheme
       appBar: AppBar(
-        title: const Text('Notifications', style: TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.black87),
+        title: Text(
+          'Notifications', 
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyLarge?.color, // 👈 Judul dinamis
+            fontSize: 16, 
+            fontWeight: FontWeight.bold
+          )
+        ),
+        backgroundColor: Colors.transparent, // 👈 Bikin transparan biar nge-blend
+        iconTheme: IconThemeData(color: Theme.of(context).iconTheme.color),
         elevation: 0,
       ),
       body: provider.isLoading 
@@ -49,14 +56,19 @@ class _NotificationPageState extends State<NotificationPage> {
                     margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     decoration: BoxDecoration(
                       // Warna beda untuk yang belum dibaca (Unread)
-                      color: notif.isRead ? Colors.white : const Color(0xFFEEF2FF),
+                      color: notif.isRead 
+                          ? Theme.of(context).cardTheme.color 
+                          : Theme.of(context).primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade200),
+                      border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.1)),
                     ),
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       leading: CircleAvatar(
-                        backgroundColor: notif.isRead ? Colors.grey.shade200 : const Color(0xFF4B39EF).withOpacity(0.1),
+                        // 👇 Background ikon dibikin dinamis agar tidak nabrak di dark mode
+                        backgroundColor: notif.isRead 
+                            ? Theme.of(context).dividerColor.withValues(alpha: 0.1) 
+                            : const Color(0xFF4B39EF).withValues(alpha: 0.1),
                         child: Icon(
                           Icons.notifications_active,
                           color: notif.isRead ? Colors.grey : const Color(0xFF4B39EF),
@@ -64,13 +76,24 @@ class _NotificationPageState extends State<NotificationPage> {
                       ),
                       title: Text(
                         notif.title, 
-                        style: TextStyle(fontSize: 14, fontWeight: notif.isRead ? FontWeight.normal : FontWeight.bold)
+                        style: TextStyle(
+                          fontSize: 14, 
+                          fontWeight: notif.isRead ? FontWeight.normal : FontWeight.bold, 
+                          color: Theme.of(context).colorScheme.onSurface,
+                        )
                       ),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 4),
-                          Text(notif.message, style: TextStyle(fontSize: 13, color: Colors.grey.shade700)),
+                          Text(
+                            notif.message, 
+                            style: TextStyle(
+                              fontSize: 13, 
+                              // 👇 Warna pesan diubah jadi onSurface dengan opacity biar selalu kontras
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)
+                            )
+                          ),
                           const SizedBox(height: 8),
                           Text(timeStr, style: const TextStyle(fontSize: 10, color: Colors.grey)),
                         ],
@@ -93,7 +116,8 @@ class _NotificationPageState extends State<NotificationPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.notifications_off_outlined, size: 64, color: Colors.grey[300]),
+          // 👇 Menghindari error warning, pakai withValues
+          Icon(Icons.notifications_off_outlined, size: 64, color: Colors.grey.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
           const Text("No Notifications Yet", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
           const Text("We'll let you know when something arrives.", style: TextStyle(color: Colors.grey, fontSize: 12)),
